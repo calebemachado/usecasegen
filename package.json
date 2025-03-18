@@ -1,0 +1,23 @@
+{
+  "name": "usecasegen",
+  "version": "1.0.0",
+  "description": "Clean Architecture Use Case Generator",
+  "main": "create-use-case.js",
+  "bin": {
+    "usecasegen": "create-use-case.js"
+  },
+  "scripts": {
+    "test": "node test-usecase-creation.js"
+  },
+  "keywords": [
+    "clean-architecture",
+    "usecase",
+    "boilerplate",
+    "generator"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "readline": "^1.3.0"
+  }
+}
