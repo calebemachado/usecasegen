@@ -8,6 +8,18 @@ This directory contains utility scripts to help with development tasks.
 
 The `create-use-case.js` script automates the creation of new use cases following a strict clean architecture pattern with clear separation of concerns. It enforces a specific project structure and coding style based on established clean architecture principles.
 
+## CI/CD and Publishing
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+- **CI Workflow**: Runs tests, linting, and formatting checks on every push and pull request
+- **NPM Publishing**: Automatically publishes to npm when a new GitHub release is created
+
+To publish a new version to npm:
+1. Update the version in `package.json`
+2. Create a new GitHub release with a tag matching the version number
+3. The publishing workflow will automatically run tests and publish to npm
+
 ### Architectural Approach
 
 The architecture enforced by this script follows these key principles:
