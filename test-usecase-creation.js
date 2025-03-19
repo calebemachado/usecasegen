@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Test script for the use case generator
- * 
+ *
  * This script performs a simple syntax validation of the main script
  * and runs a mock test to ensure it can be executed without errors.
  */

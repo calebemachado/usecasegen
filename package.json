@@ -1,6 +1,6 @@
 {
   "name": "usecasegen",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Clean Architecture Use Case Generator for TypeScript projects",
   "main": "create-use-case.js",
   "bin": {
@@ -13,9 +13,19 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "fix": "npm run format && npm run lint:fix",
+    "prepare": "husky",
     "prepublishOnly": "npm test",
-    "postpublish": "echo 'Published successfully to npm!'",
-    "prepare": "echo 'Package is ready for use!'"
+    "postpublish": "echo 'Published successfully to npm!'"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "keywords": [
     "clean-architecture",
@@ -50,6 +60,9 @@
   },
   "devDependencies": {
     "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.1",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
     "prettier": "^3.5.3"
   }
 }

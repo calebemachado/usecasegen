@@ -1,12 +1,24 @@
-# Development Scripts
-
-This directory contains utility scripts to help with development tasks.
-
-## Create Use Case Script
+# Create Use Case Script
 
 > ⚠️ **Note:** This package is highly opinionated and implements a very specific Clean Architecture pattern with TypeScript, Dependency Injection (using tsyringe), and a structured folder hierarchy. It's designed for developers who want to enforce a consistent architecture across their projects.
 
 The `create-use-case.js` script automates the creation of new use cases following a strict clean architecture pattern with clear separation of concerns. It enforces a specific project structure and coding style based on established clean architecture principles.
+
+## Code Quality Enforcement
+
+This project is configured with automated code quality tools:
+
+- **Linting**: ESLint is used to ensure code quality standards
+- **Formatting**: Prettier ensures consistent code style
+- **Git Hooks**: Husky enforces code quality before commits and pushes:
+  - Pre-commit: Runs linting and formatting checks on staged files
+  - Pre-push: Runs tests to ensure everything is working properly
+
+To manually fix code style issues, run:
+
+```bash
+npm run fix
+```
 
 ## CI/CD and Publishing
 
@@ -16,6 +28,7 @@ This project uses GitHub Actions for continuous integration and deployment:
 - **NPM Publishing**: Automatically publishes to npm when a new GitHub release is created
 
 To publish a new version to npm:
+
 1. Update the version in `package.json`
 2. Create a new GitHub release with a tag matching the version number
 3. The publishing workflow will automatically run tests and publish to npm
@@ -67,6 +80,7 @@ The script now supports interactive mode! If any parameters are missing, the scr
 #### Dependencies
 
 The script will check if the required dependency `tsyringe` is installed in your project. If not, it will:
+
 1. Ask if you want to install it
 2. If confirmed, install tsyringe and reflect-metadata
 3. Create or update the necessary configuration files (tsconfig.json)
@@ -87,6 +101,7 @@ After providing these parameters, the script will check if a domain entity model
 ```
 
 This will generate all necessary files in the following directory structure:
+
 ```
 src/
 ├── application/use-cases/          # Use case implementation

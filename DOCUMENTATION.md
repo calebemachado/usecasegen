@@ -144,7 +144,7 @@ export interface Product {
 
 /**
  * Factory function to create a new Product entity.
- * 
+ *
  * @param {Partial<Product>} data - Initial data for the entity
  * @returns {Product} A new Product entity
  */
@@ -187,18 +187,18 @@ Creates `src/domains/<domain>/usecases/<usecase-name>.usecase.interface.ts`:
 Example:
 
 ```typescript
-import type { IBaseUsecase } from "@/domains/_base/base.usecase"
+import type { IBaseUsecase } from '@/domains/_base/base.usecase';
 
 export type GetProductInput = {
   // TODO: Define input properties for the use case
   id?: string;
-}
+};
 
 export type GetProductOutput = {
   // TODO: Define output properties for the use case
   success: boolean;
   data?: any;
-}
+};
 
 export interface IGetProductUsecase extends IBaseUsecase<GetProductInput, GetProductOutput> {}
 ```

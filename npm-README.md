@@ -13,7 +13,7 @@ A powerful tool for generating Clean Architecture use case boilerplate code for 
 ✅ Supports multiple HTTP methods  
 ✅ Creates server actions for Next.js  
 ✅ Interactive mode with prompts  
-✅ Preview of files before creation  
+✅ Preview of files before creation
 
 ## Installation
 

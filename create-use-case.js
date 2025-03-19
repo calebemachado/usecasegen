@@ -97,7 +97,7 @@ function validateYesNo(value) {
   } else if (normalized === 'n' || normalized === 'no') {
     return false;
   } else {
-    console.log('Error: Please enter \'yes\'/\'y\' or \'no\'/\'n\'');
+    console.log("Error: Please enter 'yes'/'y' or 'no'/'n'");
     return null;
   }
 }
@@ -148,7 +148,10 @@ async function main() {
   if (!apiName) {
     if (!rl) rl = createPrompt();
     do {
-      apiName = await prompt(rl, `Enter API name in kebab-case (e.g., products) [default: ${domain}]: `);
+      apiName = await prompt(
+        rl,
+        `Enter API name in kebab-case (e.g., products) [default: ${domain}]: `
+      );
       // Default to domain if empty
       if (!apiName || apiName.trim() === '') {
         httpMethod = domain;
@@ -198,10 +201,14 @@ async function main() {
         setupTsyringeConfiguration();
       } catch (error) {
         console.error('Failed to install tsyringe:', error);
-        console.log('Please install tsyringe manually: npm install tsyringe reflect-metadata --save');
+        console.log(
+          'Please install tsyringe manually: npm install tsyringe reflect-metadata --save'
+        );
       }
     } else {
-      console.log('⚠️ tsyringe is required for this architecture. You will need to install it manually.');
+      console.log(
+        '⚠️ tsyringe is required for this architecture. You will need to install it manually.'
+      );
     }
   }
 
@@ -209,7 +216,10 @@ async function main() {
   if (!rl) rl = createPrompt();
 
   // Check if domain model already exists
-  const domainModelPath = path.resolve(process.cwd(), `src/domains/${domain}/entities/${domain}.entity.ts`);
+  const domainModelPath = path.resolve(
+    process.cwd(),
+    `src/domains/${domain}/entities/${domain}.entity.ts`
+  );
   const domainModelExists = fs.existsSync(domainModelPath);
 
   if (domainModelExists) {
@@ -244,33 +254,44 @@ async function main() {
     {
       path: `src/domains/${domain}/usecases/${usecaseName}.usecase.interface.ts`,
       description: 'Interface definition for the use case',
-      willCreate: !fs.existsSync(path.resolve(process.cwd(), `src/domains/${domain}/usecases/${usecaseName}.usecase.interface.ts`))
+      willCreate: !fs.existsSync(
+        path.resolve(
+          process.cwd(),
+          `src/domains/${domain}/usecases/${usecaseName}.usecase.interface.ts`
+        )
+      ),
     },
     {
       path: `src/application/use-cases/${usecaseName}.usecase.ts`,
       description: 'Use case implementation',
-      willCreate: !fs.existsSync(path.resolve(process.cwd(), `src/application/use-cases/${usecaseName}.usecase.ts`))
+      willCreate: !fs.existsSync(
+        path.resolve(process.cwd(), `src/application/use-cases/${usecaseName}.usecase.ts`)
+      ),
     },
     {
       path: `src/infrastructure/api/${apiName}/${apiName}.api.ts`,
       description: 'API client implementation',
-      willCreate: !fs.existsSync(path.resolve(process.cwd(), `src/infrastructure/api/${apiName}/${apiName}.api.ts`))
+      willCreate: !fs.existsSync(
+        path.resolve(process.cwd(), `src/infrastructure/api/${apiName}/${apiName}.api.ts`)
+      ),
     },
     {
       path: `src/presenter/actions/${usecaseCamelCase}.action.ts`,
       description: 'Server action',
-      willCreate: !fs.existsSync(path.resolve(process.cwd(), `src/presenter/actions/${usecaseCamelCase}.action.ts`))
+      willCreate: !fs.existsSync(
+        path.resolve(process.cwd(), `src/presenter/actions/${usecaseCamelCase}.action.ts`)
+      ),
     },
     {
       path: 'src/di/symbols.ts',
       description: 'Updated with new symbols',
-      willCreate: false
+      willCreate: false,
     },
     {
       path: 'src/di/container.ts',
       description: 'Updated with dependency registrations',
-      willCreate: false
-    }
+      willCreate: false,
+    },
   ]);
 
   if (createDomainModel) {
@@ -279,8 +300,8 @@ async function main() {
       {
         path: `src/domains/${domain}/entities/${domain}.entity.ts`,
         description: 'Domain entity model',
-        willCreate: true
-      }
+        willCreate: true,
+      },
     ]);
   }
 
@@ -334,7 +355,7 @@ async function main() {
   }
 
   // Execute the creation steps
-  updateSymbolsFile(usecaseSymbol, apiSymbol, domain, apiName);
+  updateSymbolsFile(usecaseSymbol, apiSymbol);
 
   if (!createDomainModel) {
     console.log(
@@ -360,7 +381,9 @@ async function main() {
   console.log(
     `${createDomainModel ? '3' : '2'}. Implement the API request in src/infrastructure/api/${apiName}/${apiName}.api.ts`
   );
-  console.log(`${createDomainModel ? '4' : '3'}. Create necessary components or pages that will use the new action`);
+  console.log(
+    `${createDomainModel ? '4' : '3'}. Create necessary components or pages that will use the new action`
+  );
 }
 
 /**
@@ -453,10 +476,8 @@ function ensureDirectoryExists(dirPath) {
  *
  * @param {string} usecaseSymbol - The use case symbol to add
  * @param {string} apiSymbol - The API symbol to add
- * @param {string} domain - The domain name
- * @param {string} apiName - The API name
  */
-function updateSymbolsFile(usecaseSymbol, apiSymbol, domain, apiName) {
+function updateSymbolsFile(usecaseSymbol, apiSymbol) {
   const symbolsPath = path.resolve(process.cwd(), 'src/di/symbols.ts');
 
   try {
@@ -464,7 +485,7 @@ function updateSymbolsFile(usecaseSymbol, apiSymbol, domain, apiName) {
 
     if (!fs.existsSync(symbolsPath)) {
       // Create symbols.ts file with basic structure if it doesn't exist
-      console.log('Creating symbols.ts file as it doesn\'t exist yet');
+      console.log("Creating symbols.ts file as it doesn't exist yet");
       content = `/**
  * Dependency Injection Symbols
  */
@@ -581,8 +602,8 @@ import { I${usecasePascalCase}Usecase, ${usecasePascalCase}Input, ${usecasePasca
 @injectable()
 export class ${usecasePascalCase}Usecase implements I${usecasePascalCase}Usecase {
   constructor(@inject(API.${apiSymbol}) private readonly ${toCamelCase(
-  apiName
-)}Api: ${apiPascalCase}Api) {}
+    apiName
+  )}Api: ${apiPascalCase}Api) {}
 
   async execute(request: ${usecasePascalCase}Input): Promise<${usecasePascalCase}Output> {
     return this.${toCamelCase(apiName)}Api.${toCamelCase(usecaseName)}(request)
@@ -676,36 +697,36 @@ function generateApiMethodBody(usecaseName, usecasePascalCase, httpMethod) {
   const endpoint = `/api/v1/${usecaseName.replace(/-/g, '/')}`;
 
   switch (httpMethod.toUpperCase()) {
-  case 'GET':
-    return `return await this.apiClient.fetch<${usecasePascalCase}Output>(\`${endpoint}\${request.id ? \`/\${request.id}\` : ''}\`, {
+    case 'GET':
+      return `return await this.apiClient.fetch<${usecasePascalCase}Output>(\`${endpoint}\${request.id ? \`/\${request.id}\` : ''}\`, {
       method: 'GET',
     });`;
 
-  case 'POST':
-    return `return await this.apiClient.fetch<${usecasePascalCase}Output>('${endpoint}', {
+    case 'POST':
+      return `return await this.apiClient.fetch<${usecasePascalCase}Output>('${endpoint}', {
       method: 'POST',
       body: JSON.stringify(request),
     });`;
 
-  case 'PUT':
-    return `return await this.apiClient.fetch<${usecasePascalCase}Output>(\`${endpoint}/\${request.id}\`, {
+    case 'PUT':
+      return `return await this.apiClient.fetch<${usecasePascalCase}Output>(\`${endpoint}/\${request.id}\`, {
       method: 'PUT',
       body: JSON.stringify(request),
     });`;
 
-  case 'PATCH':
-    return `return await this.apiClient.fetch<${usecasePascalCase}Output>(\`${endpoint}/\${request.id}\`, {
+    case 'PATCH':
+      return `return await this.apiClient.fetch<${usecasePascalCase}Output>(\`${endpoint}/\${request.id}\`, {
       method: 'PATCH',
       body: JSON.stringify(request),
     });`;
 
-  case 'DELETE':
-    return `return await this.apiClient.fetch<${usecasePascalCase}Output>(\`${endpoint}/\${request.id}\`, {
+    case 'DELETE':
+      return `return await this.apiClient.fetch<${usecasePascalCase}Output>(\`${endpoint}/\${request.id}\`, {
       method: 'DELETE',
     });`;
 
-  default:
-    return `// TODO: Implement the API method for ${httpMethod}
+    default:
+      return `// TODO: Implement the API method for ${httpMethod}
     throw new Error('Not implemented');`;
   }
 }
@@ -719,7 +740,13 @@ function generateApiMethodBody(usecaseName, usecasePascalCase, httpMethod) {
  * @param {string} apiSymbol - The API symbol
  * @param {string} usecaseName - The use case name in kebab-case
  */
-function updateContainerFile(usecasePascalCase, usecaseSymbol, apiPascalCase, apiSymbol, usecaseName) {
+function updateContainerFile(
+  usecasePascalCase,
+  usecaseSymbol,
+  apiPascalCase,
+  apiSymbol,
+  usecaseName
+) {
   const containerPath = path.resolve(process.cwd(), 'src/di/container.ts');
 
   try {
@@ -729,7 +756,7 @@ function updateContainerFile(usecasePascalCase, usecaseSymbol, apiPascalCase, ap
       const apiName = apiPascalCase.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
       const usecaseName = usecasePascalCase.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 
-      console.log('Creating container.ts file as it doesn\'t exist yet');
+      console.log("Creating container.ts file as it doesn't exist yet");
       const content = `/**
  * Dependency Injection Container
  */
@@ -908,10 +935,7 @@ export interface I${domainPascalCase}Repository {
  * Creates the ApiClient utility file if it doesn't exist.
  */
 function createApiClientUtilFile() {
-  const apiClientPath = path.resolve(
-    process.cwd(),
-    'src/infrastructure/utils/apiClient.ts'
-  );
+  const apiClientPath = path.resolve(process.cwd(), 'src/infrastructure/utils/apiClient.ts');
 
   if (!fs.existsSync(apiClientPath)) {
     const content = `/**
@@ -977,10 +1001,7 @@ export class ApiClient {
  * Creates the base usecase interface file if it doesn't exist.
  */
 function createBaseUsecaseInterface() {
-  const baseUsecasePath = path.resolve(
-    process.cwd(),
-    'src/domains/_base/base.usecase.ts'
-  );
+  const baseUsecasePath = path.resolve(process.cwd(), 'src/domains/_base/base.usecase.ts');
 
   if (!fs.existsSync(path.dirname(baseUsecasePath))) {
     fs.mkdirSync(path.dirname(baseUsecasePath), { recursive: true });
@@ -1035,31 +1056,33 @@ function setupTsyringeConfiguration() {
   const tsconfigPath = path.resolve(process.cwd(), 'tsconfig.json');
 
   if (!fs.existsSync(tsconfigPath)) {
-    console.log('⚠️ tsconfig.json not found. Creating a basic tsconfig.json for tsyringe support...');
+    console.log(
+      '⚠️ tsconfig.json not found. Creating a basic tsconfig.json for tsyringe support...'
+    );
 
     const tsconfig = {
-      'compilerOptions': {
-        'target': 'ES2020',
-        'lib': ['ES2020', 'DOM'],
-        'module': 'ESNext',
-        'moduleResolution': 'node',
-        'esModuleInterop': true,
-        'experimentalDecorators': true,
-        'emitDecoratorMetadata': true,
-        'skipLibCheck': true,
-        'strict': true,
-        'noImplicitAny': false,
-        'strictNullChecks': true,
-        'resolveJsonModule': true,
-        'isolatedModules': true,
-        'jsx': 'react-jsx',
-        'baseUrl': '.',
-        'paths': {
-          '@/*': ['src/*']
-        }
+      compilerOptions: {
+        target: 'ES2020',
+        lib: ['ES2020', 'DOM'],
+        module: 'ESNext',
+        moduleResolution: 'node',
+        esModuleInterop: true,
+        experimentalDecorators: true,
+        emitDecoratorMetadata: true,
+        skipLibCheck: true,
+        strict: true,
+        noImplicitAny: false,
+        strictNullChecks: true,
+        resolveJsonModule: true,
+        isolatedModules: true,
+        jsx: 'react-jsx',
+        baseUrl: '.',
+        paths: {
+          '@/*': ['src/*'],
+        },
       },
-      'include': ['src/**/*'],
-      'exclude': ['node_modules']
+      include: ['src/**/*'],
+      exclude: ['node_modules'],
     };
 
     fs.writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2));
