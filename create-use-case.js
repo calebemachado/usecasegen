@@ -148,7 +148,12 @@ async function main() {
   if (!apiName) {
     if (!rl) rl = createPrompt();
     do {
-      apiName = await prompt(rl, 'Enter API name (e.g., products): ');
+      apiName = await prompt(rl, `Enter API name in kebab-case (e.g., products) [default: ${domain}]: `);
+      // Default to domain if empty
+      if (!apiName || apiName.trim() === '') {
+        httpMethod = domain;
+        break;
+      }
     } while (!validateParam(apiName, 'API name'));
   }
 
@@ -165,6 +170,39 @@ async function main() {
         break;
       }
     } while (!validateHttpMethod(httpMethod));
+  }
+
+  // Check for tsyringe dependency
+  const hasTsyringe = checkTsyringeDependency();
+  
+  if (!hasTsyringe) {
+    if (!rl) rl = createPrompt();
+    let installTsyringe = null;
+    
+    do {
+      const answer = await prompt(
+        rl,
+        'tsyringe dependency not found. It is required for dependency injection. Would you like to install it? (yes/no): '
+      );
+      installTsyringe = validateYesNo(answer);
+    } while (installTsyringe === null);
+    
+    if (installTsyringe) {
+      console.log('Installing tsyringe dependency...');
+      try {
+        const { execSync } = require('child_process');
+        execSync('npm install tsyringe reflect-metadata --save', { stdio: 'inherit' });
+        console.log('✅ tsyringe and reflect-metadata installed successfully');
+        
+        // Setup tsyringe configuration
+        setupTsyringeConfiguration();
+      } catch (error) {
+        console.error('Failed to install tsyringe:', error);
+        console.log('Please install tsyringe manually: npm install tsyringe reflect-metadata --save');
+      }
+    } else {
+      console.log('⚠️ tsyringe is required for this architecture. You will need to install it manually.');
+    }
   }
 
   // Ask if user wants to create a domain model
@@ -187,22 +225,8 @@ async function main() {
     } while (createDomainModel === null);
   }
 
-  // Close the readline interface if it was created
-  if (rl) {
-    rl.close();
-  }
-
   // Normalize HTTP method
   httpMethod = httpMethod.toUpperCase();
-
-  // Confirm the parameters
-  console.log('\nCreating use case with the following parameters:');
-  console.log(`Domain: ${domain}`);
-  console.log(`Use case name: ${usecaseName}`);
-  console.log(`API name: ${apiName}`);
-  console.log(`HTTP method: ${httpMethod}`);
-  console.log(`Create domain model: ${createDomainModel ? 'Yes' : 'No'}`);
-  console.log();
 
   // Format conversions for naming conventions
   const usecaseCamelCase = toCamelCase(usecaseName);
@@ -213,12 +237,96 @@ async function main() {
   const apiPascalCase = toPascalCase(apiName);
   const domainPascalCase = toPascalCase(domain);
 
+  // Display summary of files that will be created
+  console.log('\n📁 The following files will be created or updated:');
+  
+  displayFileSummary([
+    {
+      path: `src/domains/${domain}/usecases/${usecaseName}.usecase.interface.ts`,
+      description: 'Interface definition for the use case',
+      willCreate: !fs.existsSync(path.resolve(process.cwd(), `src/domains/${domain}/usecases/${usecaseName}.usecase.interface.ts`))
+    },
+    {
+      path: `src/application/use-cases/${usecaseName}.usecase.ts`,
+      description: 'Use case implementation',
+      willCreate: !fs.existsSync(path.resolve(process.cwd(), `src/application/use-cases/${usecaseName}.usecase.ts`))
+    },
+    {
+      path: `src/infrastructure/api/${apiName}/${apiName}.api.ts`,
+      description: 'API client implementation',
+      willCreate: !fs.existsSync(path.resolve(process.cwd(), `src/infrastructure/api/${apiName}/${apiName}.api.ts`))
+    },
+    {
+      path: `src/presenter/actions/${usecaseCamelCase}.action.ts`,
+      description: 'Server action',
+      willCreate: !fs.existsSync(path.resolve(process.cwd(), `src/presenter/actions/${usecaseCamelCase}.action.ts`))
+    },
+    {
+      path: 'src/di/symbols.ts',
+      description: 'Updated with new symbols',
+      willCreate: false
+    },
+    {
+      path: 'src/di/container.ts',
+      description: 'Updated with dependency registrations',
+      willCreate: false
+    }
+  ]);
+
+  if (createDomainModel) {
+    console.log('\n🏗️  Domain model:');
+    displayFileSummary([
+      {
+        path: `src/domains/${domain}/entities/${domain}.entity.ts`,
+        description: 'Domain entity model',
+        willCreate: true
+      }
+    ]);
+  }
+
+  // Ask for confirmation to proceed
+  let confirmProceed = false;
+  if (!rl) rl = createPrompt();
+  do {
+    const answer = await prompt(
+      rl,
+      '\nDo you want to proceed with creating these files? (yes/no): '
+    );
+    confirmProceed = validateYesNo(answer);
+  } while (confirmProceed === null);
+
+  // Close the readline interface if it was created
+  if (rl) {
+    rl.close();
+  }
+
+  if (!confirmProceed) {
+    console.log('Operation cancelled. No files were created.');
+    process.exit(0);
+  }
+
+  // Confirm the parameters
+  console.log('\nCreating use case with the following parameters:');
+  console.log(`Domain: ${domain}`);
+  console.log(`Use case name: ${usecaseName}`);
+  console.log(`API name: ${apiName}`);
+  console.log(`HTTP method: ${httpMethod}`);
+  console.log(`Create domain model: ${createDomainModel ? 'Yes' : 'No'}`);
+  console.log();
+
   // Create required directory structure
   ensureDirectoryExists(`src/domains/${domain}/entities`);
   ensureDirectoryExists(`src/domains/${domain}/usecases`);
+  ensureDirectoryExists(`src/domains/_base`); // For base interfaces
   ensureDirectoryExists(`src/application/use-cases`);
   ensureDirectoryExists(`src/infrastructure/api/${apiName}`);
+  ensureDirectoryExists(`src/infrastructure/utils`);
   ensureDirectoryExists(`src/presenter/actions`);
+  ensureDirectoryExists(`src/di`); // Ensure DI directory exists
+
+  // Create base files if needed
+  createBaseUsecaseInterface();
+  createApiClientUtilFile();
 
   // Create domain model if requested
   if (createDomainModel) {
@@ -226,7 +334,7 @@ async function main() {
   }
 
   // Execute the creation steps
-  updateSymbolsFile(usecaseSymbol, apiSymbol);
+  updateSymbolsFile(usecaseSymbol, apiSymbol, domain, apiName);
   
   if (!createDomainModel) {
     console.log(
@@ -238,7 +346,7 @@ async function main() {
   createUsecaseImplementationFile(domain, usecaseName, usecasePascalCase, apiPascalCase, apiSymbol);
   createOrUpdateApiClientFile(domain, apiName, usecaseName, usecasePascalCase, httpMethod);
   updateContainerFile(usecasePascalCase, usecaseSymbol, apiPascalCase, apiSymbol);
-  createActionFile(usecaseCamelCase, usecasePascalCase, usecaseSymbol);
+  createActionFile(usecaseCamelCase, usecasePascalCase, usecaseSymbol, domain, usecaseName);
 
   // Output completion message and next steps
   console.log('\n✅ Use case creation completed!');
@@ -253,6 +361,18 @@ async function main() {
     `${createDomainModel ? '3' : '2'}. Implement the API request in src/infrastructure/api/${apiName}/${apiName}.api.ts`
   );
   console.log(`${createDomainModel ? '4' : '3'}. Create necessary components or pages that will use the new action`);
+}
+
+/**
+ * Displays a formatted summary of files that will be created or updated
+ * 
+ * @param {Array<{path: string, description: string, willCreate: boolean}>} files - The files to display
+ */
+function displayFileSummary(files) {
+  files.forEach(file => {
+    const status = file.willCreate ? '➕ Create:' : '🔄 Update:';
+    console.log(`${status.padEnd(10)} ${file.path.padEnd(60)} - ${file.description}`);
+  });
 }
 
 // Start the script
@@ -333,12 +453,42 @@ function ensureDirectoryExists(dirPath) {
  *
  * @param {string} usecaseSymbol - The use case symbol to add
  * @param {string} apiSymbol - The API symbol to add
+ * @param {string} domain - The domain name
+ * @param {string} apiName - The API name
  */
-function updateSymbolsFile(usecaseSymbol, apiSymbol) {
+function updateSymbolsFile(usecaseSymbol, apiSymbol, domain, apiName) {
   const symbolsPath = path.resolve(process.cwd(), 'src/di/symbols.ts');
 
   try {
-    let content = fs.readFileSync(symbolsPath, 'utf8');
+    let content;
+    
+    if (!fs.existsSync(symbolsPath)) {
+      // Create symbols.ts file with basic structure if it doesn't exist
+      console.log(`Creating symbols.ts file as it doesn't exist yet`);
+      content = `/**
+ * Dependency Injection Symbols
+ */
+import { Symbol } from 'tsyringe/dist/typings/symbols';
+
+export const BASE = {
+  API_CLIENT: Symbol('API_CLIENT'),
+};
+
+export const API = {
+  ${apiSymbol}: Symbol('${apiSymbol}'),
+};
+
+export const USE_CASES = {
+  ${usecaseSymbol}: Symbol('${usecaseSymbol}'),
+};
+`;
+      fs.writeFileSync(symbolsPath, content);
+      console.log('✅ Created symbols.ts');
+      return;
+    }
+
+    // Read existing file and update it
+    content = fs.readFileSync(symbolsPath, 'utf8');
 
     if (!content.includes(`${apiSymbol}: Symbol('${apiSymbol}')`)) {
       content = content.replace(
@@ -420,6 +570,9 @@ function createUsecaseImplementationFile(
   );
 
   if (!fs.existsSync(implementationPath)) {
+    // Get the API name in kebab-case from the API PascalCase
+    const apiName = apiPascalCase.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+    
     const content = `import { API } from "@/di/symbols"
 import { inject, injectable } from "tsyringe"
 import { ${apiPascalCase}Api } from "@/infrastructure/api/${apiName}/${apiName}.api"
@@ -461,6 +614,7 @@ function createOrUpdateApiClientFile(domain, apiName, usecaseName, usecasePascal
 
   if (!fs.existsSync(apiClientPath)) {
     // Create new API client file
+    const apiPascalCase = toPascalCase(apiName);
     const content = `import { BASE } from '@/di/symbols'
 import { inject, injectable } from 'tsyringe'
 import { ApiClient } from '@/infrastructure/utils/apiClient'
@@ -468,7 +622,7 @@ import { ApiClient } from '@/infrastructure/utils/apiClient'
 import type { ${usecasePascalCase}Input, ${usecasePascalCase}Output } from '@/domains/${domain}/usecases/${usecaseName}.usecase.interface'
 
 @injectable()
-export class ${toPascalCase(apiName)}Api {
+export class ${apiPascalCase}Api {
   constructor(@inject(BASE.API_CLIENT) private readonly apiClient: ApiClient) {}
 
   async ${toCamelCase(
@@ -568,22 +722,67 @@ function updateContainerFile(usecasePascalCase, usecaseSymbol, apiPascalCase, ap
   const containerPath = path.resolve(process.cwd(), 'src/di/container.ts');
 
   try {
+    // Check if we need to create the container file
+    if (!fs.existsSync(containerPath)) {
+      // Get the API name in kebab-case from the API PascalCase
+      const apiName = apiPascalCase.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+      const usecaseName = usecasePascalCase.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+      
+      console.log(`Creating container.ts file as it doesn't exist yet`);
+      const content = `/**
+ * Dependency Injection Container
+ */
+import { container } from 'tsyringe';
+import { BASE, API, USE_CASES } from './symbols';
+import { ${usecasePascalCase}Usecase } from '@/application/use-cases/${usecaseName}.usecase';
+import { ${apiPascalCase}Api } from '@/infrastructure/api/${apiName}/${apiName}.api';
+import { ApiClient } from '@/infrastructure/utils/apiClient';
+
+// Register base dependencies
+container.registerSingleton(BASE.API_CLIENT, ApiClient);
+
+// Register API clients
+container.registerSingleton(API.${apiSymbol}, ${apiPascalCase}Api);
+
+// Register use cases
+container.registerSingleton(USE_CASES.${usecaseSymbol}, ${usecasePascalCase}Usecase);
+
+export { container };
+`;
+      fs.writeFileSync(containerPath, content);
+      console.log('✅ Created container.ts');
+      return;
+    }
+
     let content = fs.readFileSync(containerPath, 'utf8');
 
     // Add import statements if they don't exist
     const usecaseImport = `import { ${usecasePascalCase}Usecase } from '@/application/use-cases/${usecaseName}.usecase';`;
+    
+    // Get the API name in kebab-case from the API PascalCase
+    const apiName = apiPascalCase.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
     const apiImport = `import { ${apiPascalCase}Api } from '@/infrastructure/api/${apiName}/${apiName}.api';`;
 
     if (!content.includes(usecasePascalCase)) {
       const importSection = content.match(/import.*from.*\n/g);
-      const lastImport = importSection[importSection.length - 1];
-      content = content.replace(lastImport, lastImport + usecaseImport + '\n');
+      if (importSection && importSection.length > 0) {
+        const lastImport = importSection[importSection.length - 1];
+        content = content.replace(lastImport, lastImport + usecaseImport + '\n');
+      } else {
+        // If there are no imports, add it at the beginning
+        content = usecaseImport + '\n' + content;
+      }
     }
 
     if (!content.includes(apiPascalCase) && !content.includes(`${apiPascalCase}Api`)) {
       const importSection = content.match(/import.*from.*\n/g);
-      const lastImport = importSection[importSection.length - 1];
-      content = content.replace(lastImport, lastImport + apiImport + '\n');
+      if (importSection && importSection.length > 0) {
+        const lastImport = importSection[importSection.length - 1];
+        content = content.replace(lastImport, lastImport + apiImport + '\n');
+      } else {
+        // If there are no imports, add it at the beginning
+        content = apiImport + '\n' + content;
+      }
     }
 
     // Add registrations if they don't exist
@@ -615,8 +814,10 @@ function updateContainerFile(usecasePascalCase, usecaseSymbol, apiPascalCase, ap
  * @param {string} usecaseCamelCase - The use case name in camelCase
  * @param {string} usecasePascalCase - The use case name in PascalCase
  * @param {string} usecaseSymbol - The use case symbol
+ * @param {string} domain - The domain name
+ * @param {string} usecaseName - The use case name in kebab-case
  */
-function createActionFile(usecaseCamelCase, usecasePascalCase, usecaseSymbol) {
+function createActionFile(usecaseCamelCase, usecasePascalCase, usecaseSymbol, domain, usecaseName) {
   const actionPath = path.resolve(
     process.cwd(),
     `src/presenter/actions/${usecaseCamelCase}.action.ts`
@@ -699,5 +900,248 @@ export interface I${domainPascalCase}Repository {
     console.log(`✅ Created domain model file: ${modelPath}`);
   } else {
     console.log(`⚠️ Domain model file already exists at: ${modelPath}`);
+  }
+}
+
+/**
+ * Creates the ApiClient utility file if it doesn't exist.
+ */
+function createApiClientUtilFile() {
+  const apiClientPath = path.resolve(
+    process.cwd(),
+    `src/infrastructure/utils/apiClient.ts`
+  );
+
+  if (!fs.existsSync(apiClientPath)) {
+    const content = `/**
+ * ApiClient for making HTTP requests
+ */
+import { injectable } from 'tsyringe';
+
+interface FetchOptions {
+  method: string;
+  headers?: Record<string, string>;
+  body?: string;
+}
+
+@injectable()
+export class ApiClient {
+  private baseUrl: string;
+
+  constructor() {
+    this.baseUrl = process.env.API_BASE_URL || '';
+  }
+
+  /**
+   * Makes a fetch request to the API
+   * 
+   * @param url The URL to fetch
+   * @param options The fetch options
+   * @returns The response data
+   */
+  async fetch<T>(url: string, options: FetchOptions): Promise<T> {
+    const defaultHeaders = {
+      'Content-Type': 'application/json',
+      // Add any other default headers here
+    };
+
+    const response = await fetch(\`\${this.baseUrl}\${url}\`, {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(\`API Error: \${response.status} \${response.statusText}\`);
+    }
+
+    // For 204 No Content responses
+    if (response.status === 204) {
+      return { success: true } as unknown as T;
+    }
+
+    return await response.json();
+  }
+}
+`;
+
+    fs.writeFileSync(apiClientPath, content);
+    console.log(`✅ Created ApiClient utility file: ${apiClientPath}`);
+  }
+}
+
+/**
+ * Creates the base usecase interface file if it doesn't exist.
+ */
+function createBaseUsecaseInterface() {
+  const baseUsecasePath = path.resolve(
+    process.cwd(),
+    `src/domains/_base/base.usecase.ts`
+  );
+
+  if (!fs.existsSync(path.dirname(baseUsecasePath))) {
+    fs.mkdirSync(path.dirname(baseUsecasePath), { recursive: true });
+  }
+
+  if (!fs.existsSync(baseUsecasePath)) {
+    const content = `/**
+ * Base usecase interface that all usecases should implement
+ */
+export interface IBaseUsecase<TInput, TOutput> {
+  execute(request: TInput): Promise<TOutput>;
+}
+`;
+
+    fs.writeFileSync(baseUsecasePath, content);
+    console.log(`✅ Created base usecase interface file: ${baseUsecasePath}`);
+  }
+}
+
+/**
+ * Checks if tsyringe dependency is installed
+ * 
+ * @returns {boolean} True if tsyringe is installed, false otherwise
+ */
+function checkTsyringeDependency() {
+  try {
+    const packageJsonPath = path.resolve(process.cwd(), 'package.json');
+    
+    if (!fs.existsSync(packageJsonPath)) {
+      console.log('⚠️ package.json not found. Cannot check for tsyringe dependency.');
+      return false;
+    }
+    
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+    
+    // Check if tsyringe is in dependencies or devDependencies
+    return (
+      (packageJson.dependencies && packageJson.dependencies.tsyringe) ||
+      (packageJson.devDependencies && packageJson.devDependencies.tsyringe)
+    );
+  } catch (error) {
+    console.error('Error checking for tsyringe dependency:', error);
+    return false;
+  }
+}
+
+/**
+ * Sets up tsyringe configuration
+ */
+function setupTsyringeConfiguration() {
+  // Check for tsconfig.json
+  const tsconfigPath = path.resolve(process.cwd(), 'tsconfig.json');
+  
+  if (!fs.existsSync(tsconfigPath)) {
+    console.log('⚠️ tsconfig.json not found. Creating a basic tsconfig.json for tsyringe support...');
+    
+    const tsconfig = {
+      "compilerOptions": {
+        "target": "ES2020",
+        "lib": ["ES2020", "DOM"],
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "noImplicitAny": false,
+        "strictNullChecks": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "jsx": "react-jsx",
+        "baseUrl": ".",
+        "paths": {
+          "@/*": ["src/*"]
+        }
+      },
+      "include": ["src/**/*"],
+      "exclude": ["node_modules"]
+    };
+    
+    fs.writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2));
+    console.log('✅ Created tsconfig.json with decorator support');
+  } else {
+    // Update existing tsconfig.json if needed
+    try {
+      const tsconfig = JSON.parse(fs.readFileSync(tsconfigPath, 'utf8'));
+      
+      let updated = false;
+      
+      if (!tsconfig.compilerOptions) {
+        tsconfig.compilerOptions = {};
+      }
+      
+      if (!tsconfig.compilerOptions.experimentalDecorators) {
+        tsconfig.compilerOptions.experimentalDecorators = true;
+        updated = true;
+      }
+      
+      if (!tsconfig.compilerOptions.emitDecoratorMetadata) {
+        tsconfig.compilerOptions.emitDecoratorMetadata = true;
+        updated = true;
+      }
+      
+      if (updated) {
+        fs.writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2));
+        console.log('✅ Updated tsconfig.json with decorator support');
+      }
+    } catch (error) {
+      console.error('Failed to update tsconfig.json:', error);
+    }
+  }
+  
+  // Create or update environment variables
+  createEnvironmentFiles();
+}
+
+/**
+ * Creates or updates environment variable files
+ */
+function createEnvironmentFiles() {
+  // Create .env file if it doesn't exist
+  const envPath = path.resolve(process.cwd(), '.env');
+  if (!fs.existsSync(envPath)) {
+    fs.writeFileSync(envPath, 'API_BASE_URL=http://localhost:3000\n');
+    console.log('✅ Created .env file with API_BASE_URL');
+  } else if (!fs.readFileSync(envPath, 'utf8').includes('API_BASE_URL')) {
+    fs.appendFileSync(envPath, '\nAPI_BASE_URL=http://localhost:3000\n');
+    console.log('✅ Updated .env file with API_BASE_URL');
+  }
+  
+  // Create .env.example if it doesn't exist
+  const envExamplePath = path.resolve(process.cwd(), '.env.example');
+  if (!fs.existsSync(envExamplePath)) {
+    fs.writeFileSync(envExamplePath, 'API_BASE_URL=http://localhost:3000\n');
+    console.log('✅ Created .env.example file');
+  }
+  
+  // Create next.config.js if it doesn't exist and seems to be a Next.js project
+  const nextConfigPath = path.resolve(process.cwd(), 'next.config.js');
+  const packageJsonPath = path.resolve(process.cwd(), 'package.json');
+  
+  if (!fs.existsSync(nextConfigPath) && fs.existsSync(packageJsonPath)) {
+    try {
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      
+      if (packageJson.dependencies && packageJson.dependencies.next) {
+        const nextConfig = `/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  env: {
+    API_BASE_URL: process.env.API_BASE_URL,
+  },
+}
+
+module.exports = nextConfig
+`;
+        fs.writeFileSync(nextConfigPath, nextConfig);
+        console.log('✅ Created next.config.js with environment variables');
+      }
+    } catch (error) {
+      console.error('Failed to check for Next.js or create next.config.js:', error);
+    }
   }
 }

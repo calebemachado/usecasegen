@@ -8,12 +8,16 @@ The `create-use-case.js` script automates the creation of boilerplate code for i
 
 - Creates all necessary files and updates configuration files for a new use case
 - Creates domain entity model files when needed (optional)
+- Uses domain name as default API name if not specified
+- Detects and handles tsyringe dependency installation
+- Sets up environment variables and project configuration automatically
 - Follows the project's architecture patterns and naming conventions
 - Supports different HTTP methods (GET, POST, PUT, PATCH, DELETE)
 - Auto-generates appropriate API endpoint implementations
 - Updates dependency injection container registrations
 - Creates server-side actions for Next.js
 - Interactive prompting for missing parameters
+- Displays a preview of files to be created or updated with confirmation
 
 ## Directory Structure
 
@@ -81,6 +85,7 @@ If any of the required parameters are missing, the script will automatically ent
 
    - Represents the API service that will handle the requests
    - Used to properly organize API client code
+   - **If not provided**, the domain name will be used by default
 
 4. **HTTP method**: (Optional) The HTTP method to use (GET, POST, PUT, PATCH, DELETE)
    - Defaults to GET if not provided
@@ -305,6 +310,9 @@ If you chose not to create a domain model when prompted but need one later, you 
 ## Implementation Notes
 
 - **Interactive Prompting**: The script will prompt for any missing parameters with validation to ensure valid input.
+- **Preview and Confirmation**: Before creating any files, the script shows a summary of all files that will be created or updated and requires confirmation from the user.
+- **Dependency Management**: The script checks for required dependencies like tsyringe and offers to install them if missing.
+- **Environment Configuration**: Automatically creates or updates environment variable files and project configuration.
 - **Naming Conventions**: The script automatically converts between different naming conventions (camelCase, PascalCase, CONST_CASE) as appropriate.
 - **HTTP Methods**: Different HTTP methods generate different API implementation templates.
 - **Error Handling**: The script provides basic error handling for file operations.

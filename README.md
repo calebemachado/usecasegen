@@ -4,7 +4,22 @@ This directory contains utility scripts to help with development tasks.
 
 ## Create Use Case Script
 
-The `create-use-case.js` script automates the creation of new use cases following the project's architecture pattern.
+> ⚠️ **Note:** This package is highly opinionated and implements a very specific Clean Architecture pattern with TypeScript, Dependency Injection (using tsyringe), and a structured folder hierarchy. It's designed for developers who want to enforce a consistent architecture across their projects.
+
+The `create-use-case.js` script automates the creation of new use cases following a strict clean architecture pattern with clear separation of concerns. It enforces a specific project structure and coding style based on established clean architecture principles.
+
+### Architectural Approach
+
+The architecture enforced by this script follows these key principles:
+
+- **Domain-Driven Design**: Domains are central organizing structures
+- **Use-Case Centric**: Business logic is encapsulated in use cases
+- **Dependency Injection**: Using tsyringe for inversion of control
+- **Clean Architecture Layers**: Domains, Application, Infrastructure, and Presenter
+- **Interface Segregation**: Interfaces define contracts between layers
+- **Separation of Concerns**: Each file has a single, well-defined responsibility
+
+If you're looking for a more flexible or different architectural approach, this tool may not be suitable for your project.
 
 ### Basic Usage
 
@@ -13,6 +28,10 @@ The `create-use-case.js` script automates the creation of new use cases followin
 ```
 
 The script will also interactively ask if you want to create a domain model if one doesn't already exist.
+
+#### Preview and Confirmation
+
+Before creating any files, the script will display a summary of all files that will be created or updated and ask for confirmation to proceed. This allows you to verify the changes before they are made.
 
 #### Interactive Mode
 
@@ -30,8 +49,18 @@ The script now supports interactive mode! If any parameters are missing, the scr
 
 - `domain`: The domain area for the use case (e.g., users, products)
 - `usecase-name`: The name of the use case in kebab-case (e.g., get-product)
-- `api-name`: The name of the API client to use (e.g., products)
+- `api-name`: The name of the API client to use (e.g., products). If not provided, the domain name will be used by default.
 - `HTTP method`: Optional. The HTTP method to use (GET, POST, PUT, PATCH, DELETE). Defaults to GET.
+
+#### Dependencies
+
+The script will check if the required dependency `tsyringe` is installed in your project. If not, it will:
+1. Ask if you want to install it
+2. If confirmed, install tsyringe and reflect-metadata
+3. Create or update the necessary configuration files (tsconfig.json)
+4. Set up environment variable files (.env, .env.example)
+
+This ensures that all the necessary infrastructure for dependency injection is properly configured.
 
 After providing these parameters, the script will check if a domain entity model exists and offer to create one if needed.
 

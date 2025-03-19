@@ -1,23 +1,46 @@
 {
   "name": "usecasegen",
   "version": "1.0.0",
-  "description": "Clean Architecture Use Case Generator",
+  "description": "Clean Architecture Use Case Generator for TypeScript projects",
   "main": "create-use-case.js",
   "bin": {
     "usecasegen": "create-use-case.js"
   },
   "scripts": {
-    "test": "node test-usecase-creation.js"
+    "test": "node test-usecase-creation.js",
+    "prepublishOnly": "npm test",
+    "postpublish": "echo 'Published successfully to npm!'",
+    "prepare": "echo 'Package is ready for use!'"
   },
   "keywords": [
     "clean-architecture",
     "usecase",
     "boilerplate",
-    "generator"
+    "generator",
+    "typescript",
+    "domain-driven-design",
+    "dependency-injection",
+    "nextjs"
   ],
-  "author": "",
+  "author": "Calebe Machado",
+  "email": "calebe@clsax.tech",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Clsax/usecasegen.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Clsax/usecasegen/issues"
+  },
+  "homepage": "https://github.com/Clsax/usecasegen#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "dependencies": {
     "readline": "^1.3.0"
+  },
+  "peerDependencies": {
+    "reflect-metadata": "^0.2.0",
+    "tsyringe": "^4.8.0"
   }
 }
