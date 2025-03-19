@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+# Run the branch-name check script
+./.husky/branch-name
