@@ -1,3 +1,7 @@
 #!/usr/bin/env sh
 
+# Check branch naming convention
+./.husky/branch-name
+
+# Run tests
 npm test
