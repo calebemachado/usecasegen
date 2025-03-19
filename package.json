@@ -6,8 +6,13 @@
   "bin": {
     "usecasegen": "create-use-case.js"
   },
+  "readme": "npm-README.md",
   "scripts": {
     "test": "node test-usecase-creation.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "prepublishOnly": "npm test",
     "postpublish": "echo 'Published successfully to npm!'",
     "prepare": "echo 'Package is ready for use!'"
@@ -27,12 +32,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Clsax/usecasegen.git"
+    "url": "git+https://github.com/calebemachado/usecasegen.git"
   },
   "bugs": {
-    "url": "https://github.com/Clsax/usecasegen/issues"
+    "url": "https://github.com/calebemachado/usecasegen/issues"
   },
-  "homepage": "https://github.com/Clsax/usecasegen#readme",
+  "homepage": "https://github.com/calebemachado/usecasegen#readme",
   "engines": {
     "node": ">=14.0.0"
   },
@@ -42,5 +47,9 @@
   "peerDependencies": {
     "reflect-metadata": "^0.2.0",
     "tsyringe": "^4.8.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "prettier": "^3.5.3"
   }
 }

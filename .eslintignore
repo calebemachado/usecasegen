@@ -1,0 +1,20 @@
+# Dependency directories
+node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+
+# Coverage directory
+coverage/
+
+# Configuration files
+.eslintrc.js
+.prettierrc
+*.config.js
+
+# Documentation
+*.md
+LICENSE

@@ -1,0 +1,24 @@
+# Dependency directories
+node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+
+# Coverage directory
+coverage/
+
+# Package files
+*.tgz
+package-lock.json
+yarn.lock
+
+# Misc files
+.DS_Store
+.env
+.env.*
+
+# Generated files
+LICENSE
